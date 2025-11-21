@@ -27,11 +27,35 @@ import matplotlib.pyplot as plt
 # Adiciona o diretório de scripts ao path
 sys.path.append(str(Path(__file__).parent / 'fase_4_dashboard_ml' / 'scripts'))
 
+# Funções de cache para modelos
+@st.cache_resource
+def load_ml_model(model_path):
+    """Carrega modelo de ML com cache"""
+    try:
+        import joblib
+        model = joblib.load(model_path)
+        return model
+    except Exception as e:
+        st.error(f"Erro ao carregar modelo ML: {e}")
+        return None
+
+@st.cache_resource
+def load_yolo_model(model_path):
+    """Carrega modelo YOLO com cache"""
+    try:
+        import torch
+        model = torch.hub.load('ultralytics/yolov5', 'custom', 
+                              path=str(model_path), force_reload=False)
+        return model
+    except Exception as e:
+        st.error(f"Erro ao carregar modelo YOLO: {e}")
+        return None
+
 # Importa módulos customizados
 try:
     from fase_4_dashboard_ml.scripts.utils import load_model, make_prediction, plot_feature_importance
-    from ir_alem_2_genetic_algorithm.genetic_optimizer import FarmGeneticOptimizer, generate_sample_farm_items
-    from fase_4_dashboard_ml.scripts.aws_manager import AWSManager, AlertLevel
+    from fase_4_dashboard_ml.scripts.genetic_optimizer import FarmGeneticOptimizer, generate_sample_farm_items
+    from fase_4_dashboard_ml.scripts.aws_manager import AWSAlertManager, AWSManager, AlertLevel
 except ImportError as e:
     st.error(f"Erro ao importar módulos: {e}")
     st.info("Execute: pip install -r requirements.txt")
@@ -296,8 +320,20 @@ elif fase == "🗄️ Fase 2: Banco de Dados":
     para o sistema FarmTech Solutions.
     """)
     
-    # Mostra DER
+    # Tenta localizar a imagem DER
     der_path = Path("fase_2_database_design/docs/der_farmtech_solutions.png")
+    
+    # Se não existir, tenta outros nomes possíveis
+    if not der_path.exists():
+        possible_paths = [
+            Path("fase_2_database_design/docs/DER_FarmTech.png"),
+            Path("fase_2_database_design/docs/database_diagram.png"),
+            Path("assets/der_farmtech.png")
+        ]
+        for p in possible_paths:
+            if p.exists():
+                der_path = p
+                break
     
     if der_path.exists():
         st.subheader("📐 Diagrama Entidade-Relacionamento (DER)")
@@ -421,11 +457,11 @@ elif fase == "🤖 Fase 4: ML Dashboard":
     prever a necessidade de irrigação com base em dados dos sensores.
     """)
     
-    # Carrega modelo
+    # Carrega modelo com cache
     model_path = Path("fase_4_dashboard_ml/irrigation_model.joblib")
     
     if model_path.exists():
-        model = load_model(str(model_path))
+        model = load_ml_model(str(model_path))
         
         if model is not None:
             st.success("✅ Modelo carregado com sucesso!")
@@ -526,27 +562,33 @@ elif fase == "☁️ Fase 5 & Ir Além 1: AWS":
     st.markdown("---")
     
     # Sistema de alertas
-    st.subheader("🔔 Sistema de Alertas AWS SNS")
+    st.subheader("🔔 Sistema de Alertas AWS SNS (Nova Versão - v2.0)")
     
-    # Inicializa AWS Manager
-    aws_manager = AWSManager()
+    # Inicializa AWS Alert Manager (nova versão)
+    if 'aws_manager' not in st.session_state:
+        st.session_state.aws_manager = AWSAlertManager()
+    
+    aws_manager = st.session_state.aws_manager
     
     # Mostra status
-    status = aws_manager.get_status()
+    stats = aws_manager.get_statistics()
     
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(
-            "AWS Configurado",
-            "✅ Sim" if status['aws_configured'] else "❌ Não"
+            "Modo de Operação",
+            "🔄 Simulação" if aws_manager.simulation_mode else "☁️ AWS Real"
         )
     with col2:
         st.metric(
-            "Modo",
-            "🔄 Simulação" if status['simulate_mode'] else "☁️ Real"
+            "Alertas Enviados",
+            stats['total_sent']
         )
     with col3:
-        st.metric("Região", status['region'])
+        st.metric(
+            "Taxa de Sucesso",
+            f"{stats['success_rate']:.1f}%"
+        )
     
     st.markdown("---")
     
@@ -566,10 +608,15 @@ elif fase == "☁️ Fase 5 & Ir Além 1: AWS":
             threshold = st.number_input("Limite Mínimo (%)", 0, 100, 30)
         
         if st.button("📤 Enviar Alerta de Umidade", type="primary"):
-            result = aws_manager.send_soil_moisture_alert(test_humidity, threshold)
+            result = aws_manager.notify_low_humidity(
+                humidity_value=test_humidity,
+                threshold=threshold,
+                location="Teste via Dashboard"
+            )
             if result['success']:
                 st.success("✅ Alerta enviado com sucesso!")
-                st.json(result)
+                with st.expander("📋 Detalhes do Envio"):
+                    st.json(result)
             else:
                 st.error("❌ Erro ao enviar alerta")
     
@@ -583,14 +630,15 @@ elif fase == "☁️ Fase 5 & Ir Além 1: AWS":
         location = st.text_input("Localização", "Setor A - Plantação de Soja")
         
         if st.button("📤 Enviar Alerta de Praga", type="primary"):
-            result = aws_manager.send_pest_detection_alert(
-                pest_name,
-                pest_confidence,
-                location
+            result = aws_manager.notify_pest_detection(
+                pest_name=pest_name,
+                confidence=pest_confidence / 100,  # Converte de % para 0-1
+                location=location
             )
             if result['success']:
                 st.success("✅ Alerta enviado com sucesso!")
-                st.json(result)
+                with st.expander("📋 Detalhes do Envio"):
+                    st.json(result)
             else:
                 st.error("❌ Erro ao enviar alerta")
     
@@ -600,14 +648,17 @@ elif fase == "☁️ Fase 5 & Ir Além 1: AWS":
         alert_level = st.selectbox("Nível", ["INFO", "WARNING", "CRITICAL", "EMERGENCY"])
         
         if st.button("📤 Enviar Alerta Genérico", type="primary"):
-            result = aws_manager.send_system_alert(
-                alert_title,
-                alert_details,
-                AlertLevel[alert_level]
+            from fase_4_dashboard_ml.scripts.aws_manager import AlertType, AlertLevel as AL
+            result = aws_manager.send_alert(
+                subject=alert_title,
+                message=alert_details,
+                alert_type=AlertType.CUSTOM,
+                severity=AL[alert_level]
             )
             if result['success']:
                 st.success("✅ Alerta enviado com sucesso!")
-                st.json(result)
+                with st.expander("📋 Detalhes do Envio"):
+                    st.json(result)
             else:
                 st.error("❌ Erro ao enviar alerta")
 
@@ -669,46 +720,53 @@ elif fase == "👁️ Fase 6: Visão YOLO":
                 st.info("🔄 Processando com YOLO...")
                 
                 try:
-                    import torch
+                    # Carrega modelo com cache
+                    model = load_yolo_model(yolo_model_path)
                     
-                    # Carrega modelo
-                    model = torch.hub.load('ultralytics/yolov5', 'custom', 
-                                          path=str(yolo_model_path), force_reload=False)
-                    
-                    # Faz detecção
-                    results = model(image)
-                    
-                    # Mostra resultados
-                    st.image(results.render()[0], use_container_width=True)
-                    
-                    # Informações das detecções
-                    detections = results.pandas().xyxy[0]
-                    
-                    if len(detections) > 0:
-                        st.success(f"✅ {len(detections)} objeto(s) detectado(s)!")
-                        st.dataframe(detections[['name', 'confidence']], use_container_width=True)
+                    if model is not None:
+                        # Faz detecção
+                        results = model(image)
                         
-                        # Verifica se detectou praga e envia alerta
-                        for _, det in detections.iterrows():
-                            if det['confidence'] > 0.7:  # Alta confiança
-                                st.warning(f"⚠️ Detecção com alta confiança: {det['name']}")
-                                
-                                if st.button(f"📤 Enviar Alerta AWS para {det['name']}"):
-                                    aws_manager = AWSManager()
-                                    result = aws_manager.send_pest_detection_alert(
-                                        pest_type=det['name'],
-                                        confidence=det['confidence'] * 100,
-                                        location="Área monitorada"
-                                    )
-                                    if result['success']:
-                                        st.success("✅ Alerta enviado!")
+                        # Mostra resultados
+                        st.image(results.render()[0], use_container_width=True)
+                        
+                        # Informações das detecções
+                        detections = results.pandas().xyxy[0]
+                        
+                        if len(detections) > 0:
+                            st.success(f"✅ {len(detections)} objeto(s) detectado(s)!")
+                            st.dataframe(detections[['name', 'confidence']], use_container_width=True)
+                            
+                            # Verifica se detectou praga e envia alerta
+                            for idx, det in detections.iterrows():
+                                if det['confidence'] > 0.7:  # Alta confiança
+                                    st.warning(f"⚠️ Detecção com alta confiança: {det['name']} ({det['confidence']*100:.1f}%)")
+                                    
+                                    # Botão único por detecção
+                                    if st.button(f"📤 Enviar Alerta AWS", key=f"alert_{idx}"):
+                                        if 'aws_manager' not in st.session_state:
+                                            st.session_state.aws_manager = AWSAlertManager()
+                                        
+                                        result = st.session_state.aws_manager.notify_pest_detection(
+                                            pest_name=det['name'],
+                                            confidence=det['confidence'],
+                                            image_path=uploaded_file.name,
+                                            location="Área monitorada via Dashboard"
+                                        )
+                                        if result['success']:
+                                            st.success(f"✅ Alerta enviado! Modo: {result['mode']}")
+                                            with st.expander("📋 Detalhes"):
+                                                st.json(result)
+                        else:
+                            st.info("ℹ️ Nenhum objeto detectado")
                     else:
-                        st.info("ℹ️ Nenhum objeto detectado")
+                        st.error("❌ Falha ao carregar modelo YOLO")
+                        st.info("💡 Verifique se o arquivo best.pt existe e está correto")
                     
-                except Exception as e:
-                    st.error(f"❌ Erro ao carregar modelo YOLO: {e}")
-                    st.info("💡 Certifique-se de que PyTorch e Ultralytics estão instalados")
-                    st.code("pip install torch torchvision ultralytics")
+                except ImportError as e:
+                    st.error(f"❌ Biblioteca ausente: {e}")
+                    st.info("💡 Certifique-se de que PyTorch e Ultralytics estão instalados:")
+                    st.code("pip install torch torchvision ultralytics", language="bash")
         
         else:
             st.info("📤 Faça upload de uma imagem para começar a detecção")
