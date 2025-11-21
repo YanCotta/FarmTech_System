@@ -30,7 +30,7 @@ sys.path.append(str(Path(__file__).parent / 'fase_4_dashboard_ml' / 'scripts'))
 # Importa módulos customizados
 try:
     from fase_4_dashboard_ml.scripts.utils import load_model, make_prediction, plot_feature_importance
-    from fase_4_dashboard_ml.scripts.genetic_optimizer import FarmGeneticOptimizer, generate_sample_farm_items
+    from ir_alem_2_genetic_algorithm.genetic_optimizer import FarmGeneticOptimizer, generate_sample_farm_items
     from fase_4_dashboard_ml.scripts.aws_manager import AWSManager, AlertLevel
 except ImportError as e:
     st.error(f"Erro ao importar módulos: {e}")
