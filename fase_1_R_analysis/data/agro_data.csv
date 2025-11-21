@@ -1,0 +1,31 @@
+Estado;Area Plantada (ha);Producao (toneladas);Classificacao de Produtividade
+Mato Grosso;10000000;35000000;Alta
+Parana;5500000;20000000;Alta
+Rio Grande do Sul;6000000;18000000;Media
+Goias;3500000;12000000;Alta
+Sao Paulo;1200000;4000000;Media
+Mato Grosso do Sul;2800000;9500000;Alta
+Bahia;1600000;5500000;Alta
+Maranhao;800000;2500000;Media
+Piaui;700000;2000000;Media
+Minas Gerais;1500000;5000000;Alta
+Tocantins;900000;3000000;Alta
+Santa Catarina;600000;1800000;Media
+Para;400000;1200000;Media
+Rondonia;300000;900000;Media
+Acre;100000;250000;Baixa
+Amazonas;50000;120000;Baixa
+Roraima;20000;50000;Baixa
+Amapa;30000;80000;Baixa
+Sergipe;40000;100000;Baixa
+Alagoas;50000;150000;Media
+Pernambuco;60000;180000;Media
+Paraiba;70000;200000;Media
+Rio Grande do Norte;80000;240000;Media
+Ceara;90000;270000;Media
+Espirito Santo;100000;300000;Media
+Rio de Janeiro;110000;330000;Media
+Distrito Federal;120000;360000;Media
+Regiao Norte;1000000;3000000;Media
+Regiao Nordeste;1500000;4500000;Media
+Regiao Centro Oeste;15000000;50000000;Alta
