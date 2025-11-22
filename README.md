@@ -23,7 +23,7 @@ Plataforma completa de agricultura de precisão integrando análise de dados, Io
 
 ## Sobre o Projeto
 
-Sistema desenvolvido como projeto final do programa de Engenharia de IA da FIAP, combinando seis módulos principais para otimização de produção agrícola através de dados e inteligência artificial.
+Sistema desenvolvido como projeto final do primeiro ano do programa de Engenharia de IA da FIAP, combinando seis módulos principais para otimização de produção agrícola através de dados e inteligência artificial.
 
 ### Objetivos
 
