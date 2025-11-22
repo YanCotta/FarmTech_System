@@ -36,7 +36,7 @@ torch==2.5.1
 torchvision==0.20.1
 # OpenCV headless (sem dependências GUI - ideal para servidores)
 opencv-python-headless==4.10.0.84
-Pillow==11.0.0
+Pillow==10.4.0
 # Ultralytics YOLOv8/v11 (atualizado para Python 3.12)
 ultralytics==8.3.29
 
