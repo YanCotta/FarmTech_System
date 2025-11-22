@@ -361,52 +361,72 @@ elif fase == "Fase 1: Análise de Dados":
                     f"{produtividade_media:.2f} ton/ha"
                 )
             
-            # Gráficos
-            st.subheader("📊 Visualizações")
+            # Gráficos Interativos
+            st.subheader("📊 Visualizações Interativas")
             
             tab1, tab2, tab3 = st.tabs(["Top 10 Estados", "Classificação", "Distribuição"])
             
             with tab1:
-                # Top 10 estados por produção
-                top_10 = df.nlargest(10, 'Producao (toneladas)')
+                # Top 10 estados por produção (Plotly)
+                top_10 = df.nlargest(10, 'Producao (toneladas)').sort_values('Producao (toneladas)')
                 
-                fig, ax = plt.subplots(figsize=(10, 6))
-                ax.barh(top_10['Estado'], top_10['Producao (toneladas)'] / 1_000_000, color='#4CAF50')
-                ax.set_xlabel('Produção (Milhões de toneladas)', fontsize=12)
-                ax.set_ylabel('Estado', fontsize=12)
-                ax.set_title('Top 10 Estados por Produção', fontsize=14, fontweight='bold')
-                ax.grid(axis='x', alpha=0.3)
-                plt.tight_layout()
-                st.pyplot(fig)
+                fig = px.bar(
+                    top_10,
+                    x='Producao (toneladas)',
+                    y='Estado',
+                    orientation='h',
+                    title='Top 10 Estados por Produção',
+                    labels={'Producao (toneladas)': 'Produção (toneladas)'},
+                    color='Producao (toneladas)',
+                    color_continuous_scale='Greens',
+                    height=500
+                )
+                fig.update_layout(showlegend=False, hovermode='y')
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Download dos dados
+                create_download_csv(top_10, "top_10_estados_producao.csv")
             
             with tab2:
-                # Distribuição por classificação
-                class_counts = df['Classificacao de Produtividade'].value_counts()
+                # Distribuição por classificação (Plotly)
+                class_counts = df['Classificacao de Produtividade'].value_counts().reset_index()
+                class_counts.columns = ['Classificacao', 'Quantidade']
                 
-                fig, ax = plt.subplots(figsize=(8, 8))
-                ax.pie(class_counts, labels=class_counts.index, autopct='%1.1f%%',
-                       colors=['#4CAF50', '#FFC107', '#F44336'], startangle=90)
-                ax.set_title('Distribuição por Classificação de Produtividade', 
-                            fontsize=14, fontweight='bold')
-                st.pyplot(fig)
+                fig = px.pie(
+                    class_counts,
+                    values='Quantidade',
+                    names='Classificacao',
+                    title='Distribuição por Classificação de Produtividade',
+                    color='Classificacao',
+                    color_discrete_map={'Alta': '#4CAF50', 'Media': '#FFC107', 'Baixa': '#F44336'},
+                    height=500
+                )
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                st.plotly_chart(fig, use_container_width=True)
             
             with tab3:
-                # Scatter plot: Área vs Produção
-                fig, ax = plt.subplots(figsize=(10, 6))
-                scatter = ax.scatter(
-                    df['Area Plantada (ha)'] / 1_000_000,
-                    df['Producao (toneladas)'] / 1_000_000,
-                    c=df['Classificacao de Produtividade'].map({'Alta': 0, 'Media': 1, 'Baixa': 2}),
-                    cmap='RdYlGn_r',
-                    s=100,
-                    alpha=0.6
+                # Scatter plot: Área vs Produção (Plotly)
+                fig = px.scatter(
+                    df,
+                    x='Area Plantada (ha)',
+                    y='Producao (toneladas)',
+                    color='Classificacao de Produtividade',
+                    size='Producao (toneladas)',
+                    hover_name='Estado',
+                    hover_data={'Area Plantada (ha)': ':,.0f', 'Producao (toneladas)': ':,.0f'},
+                    title='Relação Área Plantada vs Produção',
+                    labels={
+                        'Area Plantada (ha)': 'Área Plantada (ha)',
+                        'Producao (toneladas)': 'Produção (toneladas)'
+                    },
+                    color_discrete_map={'Alta': '#4CAF50', 'Media': '#FFC107', 'Baixa': '#F44336'},
+                    height=600
                 )
-                ax.set_xlabel('Área Plantada (Milhões de ha)', fontsize=12)
-                ax.set_ylabel('Produção (Milhões de toneladas)', fontsize=12)
-                ax.set_title('Relação Área vs Produção', fontsize=14, fontweight='bold')
-                ax.grid(alpha=0.3)
-                plt.tight_layout()
-                st.pyplot(fig)
+                fig.update_layout(hovermode='closest')
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Download dos dados completos
+                create_download_csv(df, "dados_agricolas_completo.csv")
                 
         except Exception as e:
             st.error(f"❌ Erro ao carregar dados: {e}")
@@ -499,56 +519,114 @@ elif fase == "Fase 3: IoT ESP32":
                 unsafe_allow_html=True)
     
     st.markdown("""
-    Esta fase implementa um sistema de monitoramento e irrigação automática
-    usando ESP32 com sensores de umidade, pH e nutrientes.
+    Sistema de monitoramento em tempo real usando ESP32 com sensores de umidade, 
+    pH e nutrientes distribuídos pela fazenda.
     """)
     
+    # Gera e mostra mapa de sensores
+    st.subheader("📍 Mapa de Sensores - Região de Ribeirão Preto, SP")
+    
+    sensor_data = generate_sensor_locations(20)
+    
+    # Adiciona cor baseada na umidade
+    sensor_data['color'] = sensor_data['humidity'].apply(
+        lambda h: 'red' if h < 30 else 'green'
+    )
+    sensor_data['size'] = 50  # Tamanho dos pontos
+    
+    # Cria mapa interativo com Plotly
+    fig = px.scatter_mapbox(
+        sensor_data,
+        lat='lat',
+        lon='lon',
+        color='humidity',
+        size='size',
+        hover_name='sensor_id',
+        hover_data={
+            'sector': True,
+            'humidity': ':.1f',
+            'ph': ':.1f',
+            'lat': False,
+            'lon': False,
+            'size': False
+        },
+        color_continuous_scale=['red', 'yellow', 'green'],
+        range_color=[15, 60],
+        zoom=10,
+        height=500,
+        labels={'humidity': 'Umidade (%)', 'ph': 'pH'}
+    )
+    
+    fig.update_layout(
+        mapbox_style="open-street-map",
+        margin={"r":0,"t":0,"l":0,"b":0}
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Legenda do mapa
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total de Sensores", len(sensor_data))
+    with col2:
+        critical_count = len(sensor_data[sensor_data['humidity'] < 30])
+        st.metric("Sensores Críticos", critical_count, 
+                 delta=f"{critical_count/len(sensor_data)*100:.0f}%",
+                 delta_color="inverse")
+    with col3:
+        st.metric("Umidade Média", f"{sensor_data['humidity'].mean():.1f}%")
+    
+    st.markdown("---")
+    
+    # Tabela de sensores com download
+    st.subheader("📊 Status dos Sensores")
+    
+    display_df = sensor_data[['sensor_id', 'sector', 'humidity', 'ph']].copy()
+    display_df['status'] = display_df['humidity'].apply(
+        lambda h: '🔴 Crítico' if h < 30 else '🟢 Normal'
+    )
+    display_df = display_df.sort_values('humidity')
+    
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    create_download_csv(display_df, "sensores_status.csv")
+    
+    st.markdown("---")
+    
     # Mostra código do firmware
-    st.subheader("💻 Código do Firmware (prog1.ino)")
+    st.subheader("💻 Código do Firmware")
     
     firmware_path = Path("fase_3_iot_esp32/prog1.ino")
     if firmware_path.exists():
-        with open(firmware_path, 'r', encoding='utf-8') as f:
-            code = f.read()
+        with st.expander("🔍 Ver Código Completo (prog1.ino)"):
+            with open(firmware_path, 'r', encoding='utf-8') as f:
+                code = f.read()
+            st.code(code, language='cpp', line_numbers=True)
         
-        st.code(code, language='cpp', line_numbers=True)
-        
-        st.markdown("---")
-        
-        # Informações sobre o circuito
+        # Componentes
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("🔧 Componentes Utilizados")
             st.markdown("""
-            - **ESP32**: Microcontrolador principal
-            - **DHT22**: Sensor de umidade e temperatura
-            - **LDR**: Simula sensor de pH
-            - **Botões**: Simulam sensores de nutrientes
-            - **LCD I2C**: Display de informações
-            - **Relé**: Controle da bomba de irrigação
+            **🔧 Componentes:**
+            - ESP32 (Microcontrolador)
+            - DHT22 (Temperatura/Umidade)
+            - LDR (Sensor pH)
+            - Botões (Nutrientes P/K)
+            - LCD I2C (Display)
+            - Relé (Bomba)
             """)
         
         with col2:
-            st.subheader("⚙️ Funcionalidades")
             st.markdown("""
-            - ✅ Leitura de umidade do solo
-            - ✅ Medição de pH
-            - ✅ Detecção de nutrientes (P, K)
-            - ✅ Acionamento automático de bomba
-            - ✅ Display LCD com informações
-            - ✅ Comunicação serial
+            **⚙️ Funcionalidades:**
+            - Leitura contínua de sensores
+            - Decisão automática de irrigação
+            - Display LCD com info em tempo real
+            - Comunicação serial
+            - Acionamento de bomba
             """)
-        
-        # Mostra diagram.json se existir
-        diagram_path = Path("fase_3_iot_esp32/diagram.json")
-        if diagram_path.exists():
-            with st.expander("🔍 Ver Configuração Wokwi (diagram.json)"):
-                with open(diagram_path, 'r') as f:
-                    diagram_code = f.read()
-                st.code(diagram_code, language='json')
     else:
-        st.warning(f"⚠️ Arquivo não encontrado: {firmware_path}")
+        st.warning(f"Arquivo não encontrado: {firmware_path}")
 
 # ============================================
 # FASE 4: ML Dashboard
@@ -1154,13 +1232,47 @@ elif fase == "Otimização Genética":
                 selected_df = st.session_state['farm_items'][
                     st.session_state['farm_items']['Nome'].isin(selected_items)
                 ]
-                st.dataframe(selected_df, use_container_width=True)
+                st.dataframe(selected_df, use_container_width=True, hide_index=True)
                 
-                # Gráfico de evolução
-                st.subheader("📈 Evolução do Fitness")
+                # Download CSV
+                create_download_csv(selected_df, "culturas_selecionadas.csv")
                 
-                fig = optimizer.plot_fitness_evolution(figsize=(12, 6))
-                st.pyplot(fig)
+                # Gráfico de evolução (Plotly Interativo)
+                st.subheader("📈 Evolução do Fitness (Interativo)")
+                
+                # Cria gráfico Plotly ao invés de matplotlib
+                history_df = pd.DataFrame({
+                    'Geração': range(1, len(history) + 1),
+                    'Melhor Fitness': history
+                })
+                
+                fig = px.line(
+                    history_df,
+                    x='Geração',
+                    y='Melhor Fitness',
+                    title='Evolução do Algoritmo Genético',
+                    labels={'Melhor Fitness': 'Melhor Fitness (R$)'},
+                    markers=True,
+                    height=500
+                )
+                
+                fig.update_traces(
+                    line_color='#2E7D32',
+                    line_width=2,
+                    marker=dict(size=6, color='#4CAF50')
+                )
+                
+                fig.update_layout(
+                    hovermode='x unified',
+                    plot_bgcolor='white',
+                    xaxis=dict(gridcolor='lightgray'),
+                    yaxis=dict(gridcolor='lightgray')
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Download do histórico
+                create_download_csv(history_df, "evolucao_fitness.csv")
                 
                 # Insights
                 st.subheader("💡 Insights")
