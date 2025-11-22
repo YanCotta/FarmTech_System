@@ -1,5 +1,7 @@
 # FarmTech Solutions - Guia do Sistema de Banco de Dados Enterprise
 
+**🎥 [Vídeo Demonstrativo](https://youtu.be/LlLFZXPC-bU)**
+
 ## 📚 Visão Geral
 
 Este guia documenta o sistema de gerenciamento de banco de dados profissionalizado do **FarmTech Solutions**, utilizando **SQLAlchemy 2.0.23** (ORM) e **Alembic 1.13.1** (Migrations).

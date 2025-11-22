@@ -1,5 +1,7 @@
 # Relatório: Dashboard Integrado FarmTech Solutions
 
+**🎥 [Vídeo Demonstrativo](https://youtu.be/LlLFZXPC-bU)**
+
 ## Status: Completo e Funcional
 
 **Data:** 21/11/2025  

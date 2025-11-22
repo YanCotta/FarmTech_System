@@ -1,5 +1,7 @@
 # FarmTech Solutions
 
+**🎥 [Vídeo Demonstrativo](https://youtu.be/LlLFZXPC-bU)**
+
 Plataforma completa de agricultura de precisão integrando análise de dados, IoT, machine learning, visão computacional e computação em nuvem.
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)

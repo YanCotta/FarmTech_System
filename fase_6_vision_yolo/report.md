@@ -1,5 +1,7 @@
 # Relatório de Projeto Completo: Visão Computacional FarmTech Solutions
 
+**🎥 [Vídeo Demonstrativo](https://youtu.be/LlLFZXPC-bU)**
+
 **Projeto:** Solução Completa de Visão Computacional - Detecção e Classificação de Objetos
 **Equipe FarmTech Vision Lab:**
 - Yan Pimentel Cotta - RM: 562836

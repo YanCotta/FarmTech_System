@@ -1,5 +1,7 @@
 # FarmTech Solutions - Guia de Início Rápido
 
+**🎥 [Vídeo Demonstrativo](https://youtu.be/LlLFZXPC-bU)**
+
 Instruções passo a passo para executar a plataforma FarmTech Solutions em minutos.
 
 ## Início Rápido (5 Minutos)
