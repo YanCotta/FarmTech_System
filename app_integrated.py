@@ -210,7 +210,7 @@ st.sidebar.markdown("""
 Sistema de Agricultura de Precisão
 
 Desenvolvido para FIAP - Fase 7  
-RM561452 - Raphael da Silva
+RM562836 - Yan Pimentel Cotta
 """)
 
 # ============================================
@@ -252,14 +252,6 @@ if fase == "Visão Geral":
     3. Otimizar a alocação de recursos dentro de restrições orçamentárias
     4. Fornecer insights baseados em análise de dados e inteligência artificial
     
-    ### Vídeo de Apresentação
-    """)
-    
-    st.warning("⚠️ IMPORTANTE: Adicionar link do vídeo YouTube/Vimeo após gravação")
-    
-    st.markdown("---")
-    
-    st.markdown("""
     ### Guia de Uso
     
     1. Navegue pelas fases usando o menu lateral
@@ -980,8 +972,7 @@ elif fase == "Otimização Genética":
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #666; padding: 2rem;'>
-    <p><strong>🌾 FarmTech Solutions v1.0</strong></p>
+    <p><strong>FarmTech Solutions v1.0</strong></p>
     <p>Sistema Integrado de Agricultura de Precisão com IA</p>
-    <p>Desenvolvido com ❤️ usando Streamlit, Python, ML e IoT</p>
 </div>
 """, unsafe_allow_html=True)
