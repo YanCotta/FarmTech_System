@@ -1240,18 +1240,13 @@ elif fase == "Otimização Genética":
                 # Gráfico de evolução (Plotly Interativo)
                 st.subheader("📈 Evolução do Fitness (Interativo)")
                 
-                # Cria gráfico Plotly ao invés de matplotlib
-                history_df = pd.DataFrame({
-                    'Geração': range(1, len(history) + 1),
-                    'Melhor Fitness': history
-                })
-                
+                # history já é um DataFrame com colunas: 'Geração', 'Fitness Médio', 'Fitness Máximo'
                 fig = px.line(
-                    history_df,
+                    history,
                     x='Geração',
-                    y='Melhor Fitness',
+                    y=['Fitness Médio', 'Fitness Máximo'],
                     title='Evolução do Algoritmo Genético',
-                    labels={'Melhor Fitness': 'Melhor Fitness (R$)'},
+                    labels={'value': 'Fitness (R$)', 'variable': 'Métrica'},
                     markers=True,
                     height=500
                 )
