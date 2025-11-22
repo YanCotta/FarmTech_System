@@ -14,6 +14,15 @@ Este dashboard integra todas as 6 fases do projeto FarmTech Solutions:
 """
 
 import streamlit as st
+
+# Configuração da página (DEVE SER A PRIMEIRA CHAMADA STREAMLIT)
+st.set_page_config(
+    page_title="FarmTech Solutions - Sistema Integrado",
+    page_icon="🌾",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 import pandas as pd
 import numpy as np
 import os
@@ -24,8 +33,9 @@ import joblib
 from PIL import Image
 import matplotlib.pyplot as plt
 
-# Adiciona o diretório de scripts ao path
+# Adiciona os diretórios ao path
 sys.path.append(str(Path(__file__).parent / 'fase_4_dashboard_ml' / 'scripts'))
+sys.path.append(str(Path(__file__).parent / 'ir_alem_2_genetic_algorithm'))
 
 # Funções de cache para modelos
 @st.cache_resource
@@ -54,19 +64,12 @@ def load_yolo_model(model_path):
 # Importa módulos customizados
 try:
     from fase_4_dashboard_ml.scripts.utils import load_model, make_prediction, plot_feature_importance
-    from fase_4_dashboard_ml.scripts.genetic_optimizer import FarmGeneticOptimizer, generate_sample_farm_items
+    from genetic_optimizer import FarmGeneticOptimizer, generate_sample_farm_items
     from fase_4_dashboard_ml.scripts.aws_manager import AWSAlertManager, AWSManager, AlertLevel
 except ImportError as e:
     st.error(f"Erro ao importar módulos: {e}")
     st.info("Execute: pip install -r requirements.txt")
-
-# Configuração da página
-st.set_page_config(
-    page_title="FarmTech Solutions - Sistema Integrado",
-    page_icon="🌾",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+    st.stop()
 
 # CSS customizado
 st.markdown("""
@@ -338,7 +341,7 @@ elif fase == "🗄️ Fase 2: Banco de Dados":
     if der_path.exists():
         st.subheader("📐 Diagrama Entidade-Relacionamento (DER)")
         image = Image.open(der_path)
-        st.image(image, caption="DER FarmTech Solutions", use_container_width=True)
+        st.image(image, caption="DER FarmTech Solutions", use_column_width=True)
         
         st.markdown("---")
         
@@ -555,7 +558,7 @@ elif fase == "☁️ Fase 5 & Ir Além 1: AWS":
     cost_img_path = Path("fase_5_aws_docs/docs/aws_comparison_cost.png")
     if cost_img_path.exists():
         image = Image.open(cost_img_path)
-        st.image(image, caption="Análise de Custos AWS", use_container_width=True)
+        st.image(image, caption="Análise de Custos AWS", use_column_width=True)
     else:
         st.warning(f"⚠️ Imagem não encontrada: {cost_img_path}")
     
@@ -703,14 +706,20 @@ elif fase == "👁️ Fase 6: Visão YOLO":
         )
         
         if uploaded_file is not None:
-            # Mostra imagem original
-            image = Image.open(uploaded_file)
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("📷 Imagem Original")
-                st.image(image, use_container_width=True)
+            try:
+                # Mostra imagem original
+                from io import BytesIO
+                image = Image.open(BytesIO(uploaded_file.read()))
+                uploaded_file.seek(0)  # Reset file pointer
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.subheader("📷 Imagem Original")
+                    st.image(image, use_column_width=True)
+            except Exception as e:
+                st.error(f"Erro ao carregar imagem: {e}")
+                st.stop()
             
             with col2:
                 st.subheader("🎯 Detecções")
@@ -728,7 +737,7 @@ elif fase == "👁️ Fase 6: Visão YOLO":
                         results = model(image)
                         
                         # Mostra resultados
-                        st.image(results.render()[0], use_container_width=True)
+                        st.image(results.render()[0], use_column_width=True)
                         
                         # Informações das detecções
                         detections = results.pandas().xyxy[0]
