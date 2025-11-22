@@ -512,8 +512,8 @@ elif fase == "Fase 3: IoT ESP32":
 # ============================================
 # FASE 4: ML Dashboard
 # ============================================
-elif fase == "🤖 Fase 4: ML Dashboard":
-    st.markdown('<div class="phase-header">🤖 Fase 4: Machine Learning - Predição de Irrigação</div>', 
+elif fase == "Fase 4: Machine Learning":
+    st.markdown('<div class="phase-header">Fase 4: Machine Learning - Predição de Irrigação</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
@@ -605,7 +605,7 @@ elif fase == "🤖 Fase 4: ML Dashboard":
 # FASE 5 & IR ALÉM 1: AWS
 # ============================================
 elif fase == "Fase 5: AWS & Alertas":
-    st.markdown('<div class="phase-header">Fase 5: Infraestrutura AWS e Sistema de Alertas</div>', 
+    st.markdown('<div class="phase-header">Fase 5: Infraestrutura AWS e Sistema de Alertas</div>',
                 unsafe_allow_html=True)
     
     st.markdown("""
@@ -729,8 +729,8 @@ elif fase == "Fase 5: AWS & Alertas":
 # ============================================
 # FASE 6: Visão YOLO
 # ============================================
-elif fase == "👁️ Fase 6: Visão YOLO":
-    st.markdown('<div class="phase-header">👁️ Fase 6: Visão Computacional com YOLO</div>', 
+elif fase == "Fase 6: Visão Computacional":
+    st.markdown('<div class="phase-header">Fase 6: Visão Computacional com YOLO</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
@@ -848,8 +848,8 @@ elif fase == "👁️ Fase 6: Visão YOLO":
 # ============================================
 # IR ALÉM 2: Algoritmo Genético
 # ============================================
-elif fase == "🧬 Ir Além 2: Algoritmo Genético":
-    st.markdown('<div class="phase-header">🧬 Ir Além 2: Otimização com Algoritmo Genético</div>', 
+elif fase == "Otimização Genética":
+    st.markdown('<div class="phase-header">Otimização com Algoritmo Genético</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
