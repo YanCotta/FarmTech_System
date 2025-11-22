@@ -32,6 +32,9 @@ import sqlite3
 import joblib
 from PIL import Image
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+from io import BytesIO, StringIO
 
 # Adiciona os diretórios ao path
 sys.path.append(str(Path(__file__).parent / 'fase_4_dashboard_ml' / 'scripts'))
@@ -70,6 +73,51 @@ except ImportError as e:
     st.error(f"Erro ao importar módulos: {e}")
     st.info("Execute: pip install -r requirements.txt")
     st.stop()
+
+# ============================================
+# FUNÇÕES AUXILIARES
+# ============================================
+
+@st.cache_data
+def generate_sensor_locations(num_sensors=20):
+    """
+    Gera localização fictícia de sensores em região agrícola.
+    Região: Ribeirão Preto - SP (principal polo de agronegócio)
+    """
+    # Centro: Ribeirão Preto, SP
+    center_lat = -21.1767
+    center_lon = -47.8208
+    
+    # Gera pontos aleatórios em um raio de ~10km
+    np.random.seed(42)
+    locations = []
+    
+    for i in range(num_sensors):
+        # Offset aleatório (aproximadamente 0.1 grau = ~11km)
+        lat_offset = np.random.uniform(-0.08, 0.08)
+        lon_offset = np.random.uniform(-0.08, 0.08)
+        
+        locations.append({
+            'sensor_id': f'ESP32-{i+1:03d}',
+            'lat': center_lat + lat_offset,
+            'lon': center_lon + lon_offset,
+            'humidity': np.random.uniform(15, 60),
+            'ph': np.random.uniform(5.5, 8.5),
+            'sector': f'Setor {chr(65 + i % 6)}'  # A, B, C, D, E, F
+        })
+    
+    return pd.DataFrame(locations)
+
+def create_download_csv(df, filename):
+    """Gera botão de download CSV"""
+    csv = df.to_csv(index=False)
+    st.download_button(
+        label="📥 Download CSV",
+        data=csv,
+        file_name=filename,
+        mime="text/csv",
+        key=f"download_{filename}"
+    )
 
 # CSS Profissional - Clean Corporate Theme
 st.markdown("""
@@ -200,7 +248,8 @@ fase = st.sidebar.radio(
         "Fase 4: Machine Learning",
         "Fase 5: AWS & Alertas",
         "Fase 6: Visão Computacional",
-        "Otimização Genética"
+        "Otimização Genética",
+        "Assistente IA"
     ]
 )
 
@@ -719,92 +768,162 @@ elif fase == "Fase 5: AWS & Alertas":
                 st.error("❌ Erro ao enviar alerta")
 
 # ============================================
-# FASE 6: Visão YOLO
+# FASE 6: Visão YOLO (Enhanced com Multi-Model + LLM Vision)
 # ============================================
 elif fase == "Fase 6: Visão Computacional":
-    st.markdown('<div class="phase-header">Fase 6: Visão Computacional com YOLO</div>', 
+    st.markdown('<div class="phase-header">Fase 6: Visão Computacional com YOLO + LLM Vision</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
-    Esta fase implementa detecção de objetos usando YOLOv5, treinado
-    para identificar pragas e outros elementos na plantação.
+    Esta fase implementa **Hybrid AI**: detecção rápida com YOLO (edge) + análise 
+    inteligente com LLM Vision (cloud) para diagnóstico fitopatológico avançado.
     """)
     
-    # Verifica se modelo YOLO existe
-    yolo_model_path = Path("fase_6_vision_yolo/best.pt")
+    # Seleção de modelo
+    st.subheader("🤖 Configuração do Modelo")
     
-    if yolo_model_path.exists():
-        st.success("✅ Modelo YOLO encontrado!")
-        
-        # Informações do modelo
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Arquitetura", "YOLOv5")
-        with col2:
-            st.metric("Classes", "2")
-        with col3:
-            st.metric("mAP@0.5", "51.3%")
-        with col4:
-            st.metric("Épocas", "60")
-        
-        st.markdown("---")
-        
-        # Upload de imagem
-        st.subheader("📸 Detecção de Objetos")
-        
-        uploaded_file = st.file_uploader(
-            "Faça upload de uma imagem",
-            type=['jpg', 'jpeg', 'png'],
-            help="Envie uma imagem para detectar objetos"
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        model_type = st.radio(
+            "Selecione o Modelo YOLO:",
+            ["Modelo FarmTech (Especializado em Pragas/Bananas)", 
+             "YOLOv5s (Detecção Geral - COCO Dataset)"],
+            help="FarmTech: treinado para pragas agrícolas | YOLOv5s: 80 classes gerais"
+        )
+    
+    with col2:
+        # Checkbox para análise LLM
+        llm_analysis = st.checkbox(
+            "🧠 Análise Detalhada via LLM Vision",
+            help="Requer API Key configurada no Assistente IA"
         )
         
-        if uploaded_file is not None:
-            try:
-                # Mostra imagem original
-                from io import BytesIO
-                image = Image.open(BytesIO(uploaded_file.read()))
-                uploaded_file.seek(0)  # Reset file pointer
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.subheader("📷 Imagem Original")
-                    st.image(image, use_column_width=True)
-            except Exception as e:
-                st.error(f"Erro ao carregar imagem: {e}")
-                st.stop()
+        if llm_analysis:
+            llm_api_key = st.text_input(
+                "API Key (OpenAI)",
+                type="password",
+                key="llm_vision_key",
+                help="Mesma chave do Assistente IA"
+            )
+    
+    # Carrega modelo baseado na seleção
+    if model_type == "Modelo FarmTech (Especializado em Pragas/Bananas)":
+        yolo_model_path = Path("fase_6_vision_yolo/best.pt")
+        
+        if yolo_model_path.exists():
+            st.success("✅ Modelo FarmTech carregado!")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Arquitetura", "YOLOv5")
+            with col2:
+                st.metric("Classes", "2 (Pragas)")
+            with col3:
+                st.metric("mAP@0.5", "51.3%")
+            with col4:
+                st.metric("Épocas", "60")
+            
+            model_source = "custom"
+            model_path = yolo_model_path
+        else:
+            st.error(f"❌ Modelo FarmTech não encontrado: {yolo_model_path}")
+            st.info("💡 Treine o modelo usando o notebook da Fase 6 ou use o modelo geral")
+            model_source = None
+            model_path = None
+    
+    else:  # YOLOv5s General
+        st.success("✅ Modelo YOLOv5s (General) selecionado!")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Arquitetura", "YOLOv5s")
+        with col2:
+            st.metric("Classes", "80 (COCO)")
+        with col3:
+            st.metric("Dataset", "COCO")
+        with col4:
+            st.metric("Tamanho", "14.1 MB")
+        
+        model_source = "pretrained"
+        model_path = None
+    
+    st.markdown("---")
+    
+    # Upload de imagem
+    st.subheader("📸 Detecção e Análise")
+    
+    uploaded_file = st.file_uploader(
+        "Faça upload de uma imagem",
+        type=['jpg', 'jpeg', 'png'],
+        help="Envie uma imagem de planta/cultivo para análise"
+    )
+    
+    if uploaded_file is not None:
+        try:
+            # Carrega imagem
+            from io import BytesIO
+            import base64
+            
+            image = Image.open(BytesIO(uploaded_file.read()))
+            uploaded_file.seek(0)
+            
+            # Layout de 2 colunas
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("📷 Imagem Original")
+                st.image(image, use_column_width=True)
             
             with col2:
-                st.subheader("🎯 Detecções")
-                
-                # Aqui você carregaria o modelo YOLO e faria a detecção
-                # Por ora, mostramos um placeholder
-                st.info("🔄 Processando com YOLO...")
+                st.subheader("🎯 Detecções YOLO")
                 
                 try:
-                    # Carrega modelo com cache
-                    model = load_yolo_model(yolo_model_path)
+                    # Carrega modelo apropriado
+                    if model_source == "custom":
+                        model = load_yolo_model(model_path)
+                    elif model_source == "pretrained":
+                        # Cache do modelo geral
+                        if 'yolo_general_model' not in st.session_state:
+                            with st.spinner("📥 Baixando YOLOv5s (primeira vez)..."):
+                                import torch
+                                st.session_state.yolo_general_model = torch.hub.load(
+                                    'ultralytics/yolov5', 
+                                    'yolov5s',
+                                    pretrained=True,
+                                    force_reload=False
+                                )
+                        model = st.session_state.yolo_general_model
+                    else:
+                        st.error("❌ Nenhum modelo disponível")
+                        st.stop()
                     
                     if model is not None:
                         # Faz detecção
                         results = model(image)
                         
-                        # Mostra resultados
-                        st.image(results.render()[0], use_column_width=True)
+                        # Renderiza resultados
+                        result_img = results.render()[0]
+                        st.image(result_img, use_column_width=True)
                         
-                        # Informações das detecções
+                        # Extrai detecções
                         detections = results.pandas().xyxy[0]
                         
                         if len(detections) > 0:
                             st.success(f"✅ {len(detections)} objeto(s) detectado(s)!")
-                            st.dataframe(detections[['name', 'confidence']], use_container_width=True)
                             
-                            # Verifica se detectou praga e envia alerta
+                            # Tabela de detecções
+                            st.dataframe(
+                                detections[['name', 'confidence', 'xmin', 'ymin', 'xmax', 'ymax']]
+                                .style.format({'confidence': '{:.2%}'}),
+                                use_container_width=True
+                            )
+                            
+                            # Alertas AWS para detecções com alta confiança
                             for idx, det in detections.iterrows():
-                                if det['confidence'] > 0.7:  # Alta confiança
-                                    st.warning(f"⚠️ Detecção com alta confiança: {det['name']} ({det['confidence']*100:.1f}%)")
+                                if det['confidence'] > 0.7:
+                                    st.warning(f"⚠️ Alta confiança: {det['name']} ({det['confidence']*100:.1f}%)")
                                     
-                                    # Botão único por detecção
                                     if st.button(f"📤 Enviar Alerta AWS", key=f"alert_{idx}"):
                                         if 'aws_manager' not in st.session_state:
                                             st.session_state.aws_manager = AWSAlertManager()
@@ -813,29 +932,133 @@ elif fase == "Fase 6: Visão Computacional":
                                             pest_name=det['name'],
                                             confidence=det['confidence'],
                                             image_path=uploaded_file.name,
-                                            location="Área monitorada via Dashboard"
+                                            location="Dashboard - Análise YOLO"
                                         )
                                         if result['success']:
                                             st.success(f"✅ Alerta enviado! Modo: {result['mode']}")
-                                            with st.expander("📋 Detalhes"):
-                                                st.json(result)
                         else:
-                            st.info("ℹ️ Nenhum objeto detectado")
-                    else:
-                        st.error("❌ Falha ao carregar modelo YOLO")
-                        st.info("💡 Verifique se o arquivo best.pt existe e está correto")
+                            st.info("ℹ️ Nenhum objeto detectado pelo YOLO")
                     
-                except ImportError as e:
-                    st.error(f"❌ Biblioteca ausente: {e}")
-                    st.info("💡 Certifique-se de que PyTorch e Ultralytics estão instalados:")
-                    st.code("pip install torch torchvision ultralytics", language="bash")
+                    else:
+                        st.error("❌ Falha ao carregar modelo")
+                
+                except Exception as e:
+                    st.error(f"❌ Erro na detecção: {e}")
+                    st.code(str(e))
+            
+            # Análise LLM Vision (se habilitada)
+            if llm_analysis and 'llm_api_key' in locals() and llm_api_key:
+                st.markdown("---")
+                st.subheader("🧠 Análise Fitopatológica via LLM Vision")
+                
+                with st.spinner("🔬 Analisando imagem com IA generativa..."):
+                    try:
+                        import requests
+                        import base64
+                        
+                        # Converte imagem para base64
+                        buffered = BytesIO()
+                        image.save(buffered, format="JPEG")
+                        img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                        
+                        # Prompt especializado
+                        vision_prompt = """Você é um fitopatologista especializado. Analise esta imagem de planta/cultivo e forneça:
+
+1. **Diagnóstico Visual**: O que você identifica na imagem?
+2. **Saúde da Planta**: A planta aparenta estar saudável ou com problemas?
+3. **Sintomas Observados**: Descreva manchas, descolorações, pragas visíveis, etc.
+4. **Possíveis Doenças/Pragas**: Liste hipóteses diagnósticas
+5. **Recomendações**: Ações imediatas sugeridas
+
+Seja técnico mas acessível. Use emojis para destacar pontos importantes."""
+
+                        headers = {
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {llm_api_key}"
+                        }
+                        
+                        payload = {
+                            "model": "gpt-4o-mini",
+                            "messages": [
+                                {
+                                    "role": "user",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": vision_prompt
+                                        },
+                                        {
+                                            "type": "image_url",
+                                            "image_url": {
+                                                "url": f"data:image/jpeg;base64,{img_base64}"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "max_tokens": 1000,
+                            "temperature": 0.3
+                        }
+                        
+                        response = requests.post(
+                            "https://api.openai.com/v1/chat/completions",
+                            headers=headers,
+                            json=payload,
+                            timeout=60
+                        )
+                        
+                        if response.status_code == 200:
+                            result = response.json()
+                            analysis = result['choices'][0]['message']['content']
+                            
+                            st.markdown("### 📋 Relatório Fitopatológico")
+                            st.markdown(analysis)
+                            
+                            # Metrics de uso
+                            usage = result.get('usage', {})
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Tokens Prompt", usage.get('prompt_tokens', 'N/A'))
+                            with col2:
+                                st.metric("Tokens Resposta", usage.get('completion_tokens', 'N/A'))
+                            with col3:
+                                st.metric("Total", usage.get('total_tokens', 'N/A'))
+                        
+                        else:
+                            st.error(f"❌ Erro na API: {response.status_code}")
+                            st.code(response.text)
+                    
+                    except Exception as e:
+                        st.error(f"❌ Erro na análise LLM: {e}")
+            
+            elif llm_analysis and (not 'llm_api_key' in locals() or not llm_api_key):
+                st.info("💡 Configure a API Key acima para habilitar análise LLM Vision")
         
-        else:
-            st.info("📤 Faça upload de uma imagem para começar a detecção")
+        except Exception as e:
+            st.error(f"❌ Erro ao processar imagem: {e}")
+            import traceback
+            st.code(traceback.format_exc())
     
     else:
-        st.warning(f"⚠️ Modelo YOLO não encontrado: {yolo_model_path}")
-        st.info("💡 Treine o modelo YOLO primeiro usando o notebook da Fase 6")
+        st.info("📤 Faça upload de uma imagem para começar")
+        
+        # Preview de capacidades
+        with st.expander("🎯 Capacidades do Sistema"):
+            st.markdown("""
+            **YOLO Edge Detection (Rápido):**
+            - ✅ Detecção em tempo real
+            - ✅ Múltiplos objetos simultâneos
+            - ✅ Bounding boxes precisos
+            - ✅ Confiança por detecção
+            
+            **LLM Vision Analysis (Inteligente):**
+            - 🧠 Diagnóstico fitopatológico detalhado
+            - 🧠 Identificação de sintomas sutis
+            - 🧠 Recomendações de tratamento
+            - 🧠 Análise de contexto completo
+            
+            **Hybrid AI = Melhor dos 2 Mundos!**
+            """)
 
 # ============================================
 # IR ALÉM 2: Algoritmo Genético
@@ -967,6 +1190,206 @@ elif fase == "Otimização Genética":
                 st.error(f"❌ Erro na otimização: {e}")
                 import traceback
                 st.code(traceback.format_exc())
+
+# ============================================
+# ASSISTENTE IA - Interface de Linguagem Natural
+# ============================================
+elif fase == "Assistente IA":
+    st.markdown('<div class="phase-header">Assistente IA - Consulta em Linguagem Natural</div>', 
+                unsafe_allow_html=True)
+    
+    st.markdown("""
+    Converse com seus dados agrícolas em linguagem natural. O assistente analisa
+    os dados de sensores e responde perguntas sobre irrigação, pH, nutrientes e muito mais.
+    """)
+    
+    # Configuração de API Key
+    st.subheader("🔑 Configuração")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        api_key = st.text_input(
+            "API Key (OpenAI)",
+            type="password",
+            help="Insira sua chave de API da OpenAI. Você pode obtê-la em https://platform.openai.com/api-keys"
+        )
+    
+    with col2:
+        model_choice = st.selectbox(
+            "Modelo",
+            ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+            help="gpt-4o-mini é mais rápido e barato"
+        )
+    
+    st.markdown("---")
+    
+    # Verifica se há API key
+    if not api_key:
+        st.info("""
+        ### 💡 Como usar o Assistente IA
+        
+        1. **Obtenha uma API Key** da OpenAI em https://platform.openai.com/api-keys
+        2. **Cole a chave** no campo acima (ela ficará oculta)
+        3. **Faça perguntas** sobre seus dados agrícolas
+        
+        **Exemplos de perguntas:**
+        - "Quais setores precisam de irrigação urgente?"
+        - "Qual é o pH médio do solo?"
+        - "Existem áreas com déficit de fósforo?"
+        - "Qual a umidade mínima registrada?"
+        - "Quantos sensores indicam necessidade de irrigação?"
+        """)
+        
+        # Mostra preview dos dados mesmo sem API key
+        st.subheader("📊 Preview dos Dados Disponíveis")
+        
+        db_path = Path("fase_4_dashboard_ml/irrigation.db")
+        if db_path.exists():
+            try:
+                conn = sqlite3.connect(db_path)
+                df = pd.read_sql_query("SELECT * FROM irrigation_data ORDER BY id DESC LIMIT 10", conn)
+                conn.close()
+                
+                st.dataframe(df, use_container_width=True)
+                st.caption(f"Mostrando 10 registros mais recentes de {len(pd.read_sql_query('SELECT COUNT(*) FROM irrigation_data', sqlite3.connect(db_path)))} total")
+                
+            except Exception as e:
+                st.error(f"Erro ao carregar dados: {e}")
+        else:
+            st.warning("Banco de dados não encontrado. Execute a Fase 4 primeiro.")
+    
+    else:
+        # Interface de chat
+        st.subheader("💬 Chat com seus Dados")
+        
+        # Inicializa histórico de mensagens
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+        
+        # Mostra histórico de mensagens
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+        
+        # Input do usuário
+        if prompt := st.chat_input("Faça uma pergunta sobre os dados agrícolas..."):
+            # Adiciona mensagem do usuário ao histórico
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            
+            # Mostra mensagem do usuário
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
+            # Processa resposta
+            with st.chat_message("assistant"):
+                with st.spinner("Analisando dados..."):
+                    try:
+                        # Carrega dados do banco
+                        db_path = Path("fase_4_dashboard_ml/irrigation.db")
+                        
+                        if not db_path.exists():
+                            response = "❌ Banco de dados não encontrado. Execute a Fase 4 primeiro para gerar dados."
+                        else:
+                            conn = sqlite3.connect(db_path)
+                            df = pd.read_sql_query("SELECT * FROM irrigation_data ORDER BY id DESC LIMIT 50", conn)
+                            conn.close()
+                            
+                            # Prepara contexto dos dados
+                            stats = {
+                                "total_registros": len(df),
+                                "umidade_media": df['humidity'].mean(),
+                                "umidade_min": df['humidity'].min(),
+                                "umidade_max": df['humidity'].max(),
+                                "ph_medio": df['ph'].mean(),
+                                "ph_min": df['ph'].min(),
+                                "ph_max": df['ph'].max(),
+                                "fosforo_medio": df['phosphorus'].mean(),
+                                "potassio_medio": df['potassium'].mean(),
+                                "precisa_irrigacao": df['needs_irrigation'].sum(),
+                                "nao_precisa_irrigacao": (df['needs_irrigation'] == 0).sum()
+                            }
+                            
+                            # Amostra de dados recentes
+                            sample_data = df.head(10).to_dict('records')
+                            
+                            # Monta prompt para a LLM
+                            system_prompt = f"""Você é um assistente especializado em agricultura de precisão. 
+                            Analise os dados de sensores agrícolas e responda perguntas de forma clara e objetiva.
+                            
+                            ESTATÍSTICAS DOS DADOS (últimos 50 registros):
+                            - Total de sensores: {stats['total_registros']}
+                            - Umidade do solo: média {stats['umidade_media']:.1f}%, mín {stats['umidade_min']:.1f}%, máx {stats['umidade_max']:.1f}%
+                            - pH do solo: média {stats['ph_medio']:.1f}, mín {stats['ph_min']:.1f}, máx {stats['ph_max']:.1f}
+                            - Fósforo: média {stats['fosforo_medio']:.1f} ppm
+                            - Potássio: média {stats['potassio_medio']:.1f} ppm
+                            - Sensores que precisam irrigação: {stats['precisa_irrigacao']}
+                            - Sensores que NÃO precisam irrigação: {stats['nao_precisa_irrigacao']}
+                            
+                            AMOSTRA DOS 10 REGISTROS MAIS RECENTES:
+                            {sample_data}
+                            
+                            Responda de forma técnica mas acessível, incluindo números e recomendações práticas quando relevante.
+                            """
+                            
+                            # Chama API da OpenAI
+                            import requests
+                            import json
+                            
+                            headers = {
+                                "Content-Type": "application/json",
+                                "Authorization": f"Bearer {api_key}"
+                            }
+                            
+                            payload = {
+                                "model": model_choice,
+                                "messages": [
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": prompt}
+                                ],
+                                "temperature": 0.7,
+                                "max_tokens": 800
+                            }
+                            
+                            api_response = requests.post(
+                                "https://api.openai.com/v1/chat/completions",
+                                headers=headers,
+                                json=payload,
+                                timeout=30
+                            )
+                            
+                            if api_response.status_code == 200:
+                                result = api_response.json()
+                                response = result['choices'][0]['message']['content']
+                            else:
+                                response = f"❌ Erro na API: {api_response.status_code} - {api_response.text}"
+                    
+                    except Exception as e:
+                        response = f"❌ Erro ao processar pergunta: {str(e)}"
+                    
+                    # Mostra resposta
+                    st.markdown(response)
+                    
+                    # Adiciona resposta ao histórico
+                    st.session_state.messages.append({"role": "assistant", "content": response})
+        
+        # Botão para limpar histórico
+        if st.session_state.messages:
+            if st.button("🗑️ Limpar Conversa"):
+                st.session_state.messages = []
+                st.rerun()
+        
+        # Sugestões de perguntas
+        with st.expander("💡 Sugestões de Perguntas"):
+            st.markdown("""
+            - "Quantos sensores indicam necessidade de irrigação?"
+            - "Qual é a umidade média do solo?"
+            - "Existem áreas com pH fora da faixa ideal (6.0-7.5)?"
+            - "Qual sensor tem o menor nível de fósforo?"
+            - "Faça um resumo da situação geral das plantações"
+            - "Quais são os 3 principais problemas identificados?"
+            - "O nível de potássio está adequado?"
+            """)
 
 # Footer
 st.markdown("---")
