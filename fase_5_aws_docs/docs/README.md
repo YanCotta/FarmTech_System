@@ -1,4 +1,4 @@
-## ✅ Entrega 2: Estimativa de Custo na Nuvem AWS - CONCLUÍDA
+## Entrega 2: Estimativa de Custo na Nuvem AWS - Concluída
 
 ### Comparativo de Custos: US East (Ohio) vs. São Paulo (Brasil)
 
