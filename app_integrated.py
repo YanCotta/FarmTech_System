@@ -71,147 +71,208 @@ except ImportError as e:
     st.info("Execute: pip install -r requirements.txt")
     st.stop()
 
-# CSS customizado
+# CSS Profissional - Clean Corporate Theme
 st.markdown("""
 <style>
+    /* Reset e Variáveis */
+    :root {
+        --primary-green: #2E7D32;
+        --secondary-green: #388E3C;
+        --light-gray: #F5F5F5;
+        --medium-gray: #E0E0E0;
+        --dark-gray: #333333;
+        --white: #FFFFFF;
+        --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* Header Principal */
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #2E7D32;
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--white);
         text-align: center;
-        padding: 1rem;
-        background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
-        border-radius: 10px;
-        color: white;
+        padding: 1.5rem 2rem;
+        background: var(--primary-green);
+        border-radius: 4px;
         margin-bottom: 2rem;
+        letter-spacing: 0.5px;
     }
+    
+    /* Headers de Fase */
     .phase-header {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #1B5E20;
-        margin-top: 1rem;
-        margin-bottom: 1rem;
-        padding: 0.5rem;
-        border-left: 5px solid #4CAF50;
-        background-color: #E8F5E9;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--dark-gray);
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary-green);
     }
+    
+    /* Cards de Métricas */
     .metric-card {
-        background-color: #F1F8E9;
-        padding: 1rem;
-        border-radius: 10px;
-        border: 2px solid #AED581;
+        background-color: var(--white);
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        transition: box-shadow 0.3s ease;
+        margin-bottom: 1rem;
     }
+    
+    .metric-card:hover {
+        box-shadow: var(--shadow-hover);
+    }
+    
+    /* Alert Boxes */
     .alert-box {
-        padding: 1rem;
-        border-radius: 5px;
+        padding: 1rem 1.5rem;
+        border-radius: 4px;
         margin: 1rem 0;
+        background-color: var(--light-gray);
+        border-left: 4px solid var(--primary-green);
     }
+    
     .alert-info {
         background-color: #E3F2FD;
-        border-left: 4px solid #2196F3;
+        border-left-color: #1976D2;
     }
+    
     .alert-success {
         background-color: #E8F5E9;
-        border-left: 4px solid #4CAF50;
+        border-left-color: var(--primary-green);
     }
+    
     .alert-warning {
         background-color: #FFF3E0;
-        border-left: 4px solid #FF9800;
+        border-left-color: #F57C00;
+    }
+    
+    /* Containers */
+    .stApp {
+        background-color: var(--light-gray);
+    }
+    
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background-color: var(--white);
+        border-right: 1px solid var(--medium-gray);
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        background-color: var(--primary-green);
+        color: var(--white);
+        border-radius: 4px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        background-color: var(--secondary-green);
+    }
+    
+    /* Tabelas */
+    .dataframe {
+        border: 1px solid var(--medium-gray) !important;
+        border-radius: 4px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # Header principal
-st.markdown('<div class="main-header">🌾 FarmTech Solutions - Sistema Integrado de Agritech com IA</div>', 
+st.markdown('<div class="main-header">FarmTech Solutions | Sistema Integrado de Agricultura de Precisão</div>', 
             unsafe_allow_html=True)
 
 # Sidebar - Navegação
-st.sidebar.title("📋 Navegação")
+st.sidebar.title("Navegação")
 st.sidebar.markdown("---")
 
 fase = st.sidebar.radio(
-    "Selecione a Fase:",
+    "Selecione o Módulo:",
     [
-        "🏠 Home",
-        "📊 Fase 1: Dados & R",
-        "🗄️ Fase 2: Banco de Dados",
-        "🔌 Fase 3: IoT ESP32",
-        "🤖 Fase 4: ML Dashboard",
-        "☁️ Fase 5 & Ir Além 1: AWS",
-        "👁️ Fase 6: Visão YOLO",
-        "🧬 Ir Além 2: Algoritmo Genético"
+        "Visão Geral",
+        "Fase 1: Análise de Dados",
+        "Fase 2: Banco de Dados",
+        "Fase 3: IoT ESP32",
+        "Fase 4: Machine Learning",
+        "Fase 5: AWS & Alertas",
+        "Fase 6: Visão Computacional",
+        "Otimização Genética"
     ]
 )
 
 st.sidebar.markdown("---")
-st.sidebar.info("""
+st.sidebar.markdown("""
 **FarmTech Solutions**  
-Sistema completo de agricultura de precisão com IA
+Sistema de Agricultura de Precisão
 
-📧 Contato: contato@farmtech.com  
-🌐 Website: www.farmtech.com
+Desenvolvido para FIAP - Fase 7  
+RM561452 - Raphael da Silva
 """)
 
 # ============================================
-# FASE: HOME
+# MÓDULO: VISÃO GERAL
 # ============================================
-if fase == "🏠 Home":
-    st.markdown('<div class="phase-header">🏠 Bem-vindo ao FarmTech Solutions</div>', unsafe_allow_html=True)
+if fase == "Visão Geral":
+    st.markdown('<div class="phase-header">Visão Geral do Sistema</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("📁 Fases Implementadas", "6")
+        st.metric("Fases Implementadas", "6")
     with col2:
-        st.metric("🚀 Desafios 'Ir Além'", "2")
+        st.metric("Módulos Extras", "2")
     with col3:
-        st.metric("🤖 Modelos de IA", "2")
+        st.metric("Modelos de IA", "2")
     
     st.markdown("---")
     
     st.markdown("""
-    ## 🌟 Sobre o Projeto
+    ### Sobre o Projeto
     
-    O **FarmTech Solutions** é um sistema completo de agricultura de precisão que integra:
+    O **FarmTech Solutions** é um sistema integrado de agricultura de precisão desenvolvido 
+    como projeto final do curso de IA da FIAP, integrando 6 fases principais e 2 desafios extras.
     
-    - 📊 **Análise de Dados**: Processamento estatístico de dados agrícolas
-    - 🗄️ **Banco de Dados**: Sistema robusto de armazenamento
-    - 🔌 **IoT**: Monitoramento em tempo real com ESP32
-    - 🤖 **Machine Learning**: Predição inteligente de irrigação
-    - ☁️ **Cloud AWS**: Infraestrutura escalável e alertas
-    - 👁️ **Visão Computacional**: Detecção de pragas com YOLO
-    - 🧬 **Otimização**: Algoritmos genéticos para alocação de recursos
+    **Módulos Implementados:**
     
-    ## 🎯 Objetivos do Sistema
+    - **Análise de Dados**: Processamento estatístico de dados agrícolas com R
+    - **Banco de Dados**: Modelo relacional completo para gestão de dados
+    - **IoT ESP32**: Monitoramento em tempo real de sensores agrícolas
+    - **Machine Learning**: Predição inteligente de necessidade de irrigação
+    - **Cloud AWS**: Sistema de alertas via SNS com fallback de simulação
+    - **Visão Computacional**: Detecção de pragas utilizando YOLOv5
+    - **Otimização Genética**: Alocação ótima de recursos com algoritmos genéticos
     
-    1. **Aumentar a eficiência** do uso de recursos hídricos
-    2. **Reduzir perdas** por pragas e doenças
-    3. **Otimizar alocação** de recursos agrícolas
-    4. **Prover insights** baseados em dados
+    ### Objetivos Técnicos
     
-    ## 📹 Vídeo de Apresentação
+    1. Aumentar a eficiência do uso de recursos hídricos
+    2. Reduzir perdas agrícolas causadas por pragas e doenças
+    3. Otimizar a alocação de recursos dentro de restrições orçamentárias
+    4. Fornecer insights baseados em análise de dados e inteligência artificial
+    
+    ### Vídeo de Apresentação
     """)
     
-    st.info("🎬 Vídeo de apresentação do projeto (placeholder)")
-    st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+    st.warning("⚠️ IMPORTANTE: Adicionar link do vídeo YouTube/Vimeo após gravação")
     
     st.markdown("---")
     
     st.markdown("""
-    ## 🚀 Como Usar
+    ### Guia de Uso
     
-    1. **Navegue** pelas fases usando o menu lateral
-    2. **Explore** os dados e visualizações de cada fase
-    3. **Teste** os modelos de IA interativamente
-    4. **Experimente** as funcionalidades de otimização
-    
-    **💡 Dica:** Comece pela Fase 1 para entender o contexto dos dados!
+    1. Navegue pelas fases usando o menu lateral
+    2. Explore os dados e visualizações de cada módulo
+    3. Teste os modelos de IA de forma interativa
+    4. Experimente as funcionalidades de otimização
     """)
 
 # ============================================
 # FASE 1: Dados & R
 # ============================================
-elif fase == "📊 Fase 1: Dados & R":
-    st.markdown('<div class="phase-header">📊 Fase 1: Análise de Dados Agrícolas</div>', 
+elif fase == "Fase 1: Análise de Dados":
+    st.markdown('<div class="phase-header">Fase 1: Análise de Dados Agrícolas</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
@@ -314,8 +375,8 @@ elif fase == "📊 Fase 1: Dados & R":
 # ============================================
 # FASE 2: Banco de Dados
 # ============================================
-elif fase == "🗄️ Fase 2: Banco de Dados":
-    st.markdown('<div class="phase-header">🗄️ Fase 2: Design de Banco de Dados</div>', 
+elif fase == "Fase 2: Banco de Dados":
+    st.markdown('<div class="phase-header">Fase 2: Design de Banco de Dados</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
@@ -392,8 +453,8 @@ elif fase == "🗄️ Fase 2: Banco de Dados":
 # ============================================
 # FASE 3: IoT ESP32
 # ============================================
-elif fase == "🔌 Fase 3: IoT ESP32":
-    st.markdown('<div class="phase-header">🔌 Fase 3: Sistema IoT com ESP32</div>', 
+elif fase == "Fase 3: IoT ESP32":
+    st.markdown('<div class="phase-header">Fase 3: Sistema IoT com ESP32</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
@@ -543,8 +604,8 @@ elif fase == "🤖 Fase 4: ML Dashboard":
 # ============================================
 # FASE 5 & IR ALÉM 1: AWS
 # ============================================
-elif fase == "☁️ Fase 5 & Ir Além 1: AWS":
-    st.markdown('<div class="phase-header">☁️ Fase 5: Infraestrutura AWS & Sistema de Alertas</div>', 
+elif fase == "Fase 5: AWS & Alertas":
+    st.markdown('<div class="phase-header">Fase 5: Infraestrutura AWS e Sistema de Alertas</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
