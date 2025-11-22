@@ -12,8 +12,7 @@ Versão: 2.0.0 (Enterprise Edition)
 """
 
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from datetime import datetime
 from pathlib import Path
 import logging
